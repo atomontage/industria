@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2009, 2010, 2011, 2012, 2018 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2009, 2010, 2011, 2012, 2018, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -100,7 +100,7 @@
 
 ;;; DNS message encoding
 
-  (define (put-dns-message port msg)
+  (define (put-dns-message* port msg)
     (define label-table
       ;; TODO: case insensitive comparison can be used sometimes
       (make-hashtable (lambda (x) (fold-left + 0 (bytevector->u8-list x)))
@@ -135,9 +135,15 @@
       (for-each put-resource (dns-message-authority msg))
       (for-each put-resource (dns-message-additional msg))))
 
+  (define (put-dns-message port msg)
+    (let-values ([(p extract) (open-bytevector-output-port)])
+      (put-dns-message* p msg)
+      (let ((bv (extract)))
+        (put-bytevector port bv))))
+
   (define (put-dns-message/delimited port msg)
-    (let-values (((p extract) (open-bytevector-output-port)))
-      (put-dns-message p msg)
+    (let-values ([(p extract) (open-bytevector-output-port)])
+      (put-dns-message* p msg)
       (let ((bv (extract)))
         (put-bytevector port (pack "!S" (bytevector-length bv)))
         (put-bytevector port bv))))

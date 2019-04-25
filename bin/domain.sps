@@ -1,6 +1,6 @@
 #!/usr/bin/env scheme-script
 ;; -*- mode: scheme; coding: utf-8 -*- !#
-;; Copyright © 2009, 2010, 2011 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2009, 2010, 2011, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -23,52 +23,49 @@
 
 ;; Generally useless program to test the dns library.
 
-(import (rnrs)
-        (only (ikarus) udp-connect)
-        (industria tcp)
-        (industria dns)
-        (industria dns numbers))
+(import
+  (rnrs)
+  (industria dns)
+  (industria dns numbers)
+  (usocket))
 
 (define (print . x) (for-each display x) (newline))
 
 ;; TODO: accept command line arguments
 
-;;(define udp-connect #f)
-
 (define (query-and-print host service protocol qname qtype)
-  (let-values (((i o)
-                (case protocol
-                  ((tcp) (tcp-connect host service))
-                  ((udp) (udp-connect host service)))))
-    (let ((q (make-normal-dns-query qname qtype #t)))
-      ;; (print ";;; Sending query: ") (print-dns-message q)
-      (case protocol
-        ((tcp) (put-dns-message/delimited o q))
-        ((udp) (put-dns-message o q)))
-      (flush-output-port o)
-      (let lp ()
-        (let ((r (parse-dns-message
-                  (case protocol
-                    ((tcp) (get-bytevector-dns i))
-                    ((udp) (get-bytevector-some i))))))
-          (cond ((falsified-dns-reply? q r)
-                 ;; Useful for UDP only, really
-                 (print ";;; FALSIFIED MESSAGE:")
-                 (print-dns-message r)
-                 (print ";;; FALSIFIED MESSAGE DISCARDED!")
-                 (lp))
-                ((= (dns-message-rcode r) (dns-rcode NOERROR))
-                 ;; TODO: restore the case from qname
-                 (print ";;; Reply on " protocol " socket " host ":" service)
-                 (print-dns-message r)
-                 (close-port i) (close-port o))
-                (else
-                 (print ";; Reply with an ERROR:")
-                 (print-dns-message r)
-                 (print "\n\n;;; THERE IS AN ERROR!!!!")
-                 (close-port i) (close-port o))))))))
+  (let ((s (case protocol
+             ((udp) (make-udp-client-usocket host service))
+             ((tcp) (make-tcp-client-usocket host service)))))
+    (let ((i (client-usocket-input-port s))
+          (o (client-usocket-output-port s)))
+      (let ((q (make-normal-dns-query qname qtype #t)))
+        ;; (print ";;; Sending query: ") (print-dns-message q)
+        (case protocol
+          ((tcp) (put-dns-message/delimited o q))
+          ((udp) (put-dns-message o q)))
+        (flush-output-port o)
+        (let lp ()
+          (let ((r (parse-dns-message
+                    (case protocol
+                      ((tcp) (get-bytevector-dns i))
+                      ((udp) (get-bytevector-some i))))))
+            (cond ((falsified-dns-reply? q r)
+                   ;; Useful for UDP only, really
+                   (print ";;; FALSIFIED MESSAGE:")
+                   (print-dns-message r)
+                   (print ";;; FALSIFIED MESSAGE DISCARDED!")
+                   (lp))
+                  ((= (dns-message-rcode r) (dns-rcode NOERROR))
+                   ;; TODO: restore the case from qname
+                   (print ";;; Reply on " protocol " socket " host ":" service)
+                   (print-dns-message r)
+                   (close-port i) (close-port o))
+                  (else
+                   (print ";; Reply with an ERROR:")
+                   (print-dns-message r)
+                   (print "\n\n;;; THERE IS AN ERROR!!!!")
+                   (close-port i) (close-port o)))))))))
 
-
-(query-and-print "8.8.8.8" "53" 'tcp
+(query-and-print "1.1.1.1" "53" 'tcp
                  "." (dns-rrtype DNSKEY))
-

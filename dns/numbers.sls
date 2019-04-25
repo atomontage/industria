@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2010, 2011, 2012 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2011, 2012, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -142,18 +142,31 @@
      DHCID        49;DHCID                                       [RFC4701]
      NSEC3        50;NSEC3                                       [RFC5155]
      NSEC3PARAM   51;NSEC3PARAM                                  [RFC5155]
-  ;; Unassigned   52-54
+     TLSA         52;TLSA                                        [RFC6698]
+     SMIMEA       53;S/MIME cert association                     [RFC8162]
+  ;; Unassigned   54
      HIP          55;Host Identity Protocol                      [RFC5205]
      NINFO        56;NINFO                                       [Reid]
      RKEY         57;RKEY                                        [Reid]
      TALINK       58;Trust Anchor LINK                           [Wijngaards]
-  ;; Unassigned   59-98
+     CDS          59;Child DS                                    [RFC7344]
+     CDNSKEY      60;DNSKEY(s) the Child wants reflected in DS   [RFC7344]
+     OPENPGPKEY   61;OpenPGP Key                                 [RFC7929]
+     CSYNC        62;Child-To-Parent Synchronization             [RFC7477]
+     ZONEMD       63;message digest for DNS zone                 [draft-wessels-dns-zone-digest]
+  ;; Unassigned   64-98
      SPF          99;                                            [RFC4408]
      UINFO        100;                                           [IANA-Reserved]
      UID          101;                                           [IANA-Reserved]
      GID          102;                                           [IANA-Reserved]
      UNSPEC       103;                                           [IANA-Reserved]
-  ;; Unassigned   104-248
+     NID          104;                                           [RFC6742]
+     L32          105;                                           [RFC6742]
+     L64          106;                                           [RFC6742]
+     LP           107;                                           [RFC6742]
+     EUI48        108;an EUI-48 address                          [RFC7043]
+     EUI64        109;an EUI-64 address                          [RFC7043]
+  ;; Unassigned   110-248
      TKEY         249;Transaction Key                            [RFC2930]
      TSIG         250;Transaction Signature                      [RFC2845]
      IXFR         251;incremental transfer                       [RFC1995]
@@ -161,7 +174,12 @@
      MAILB        253;mailbox-related RRs (MB, MG or MR)         [RFC1035]
      MAILA        254;mail agent RRs (Obsolete - see MX)         [RFC1035]
      *            255;A request for all records                  [RFC1035]
-  ;; Unassigned   256-32767
+     URI          256;URI                                        [RFC7553]
+     CAA          257;Certification Authority Restriction        [RFC6844]
+     AVC          258;Application Visibility and Control         [Wolfgang_Riedel]
+     DOA          259;Digital Object Architecture                [draft-durand-doa-over-dns]
+     AMTRELAY     260;Automatic Multicast Tunneling Relay        [draft-ietf-mboned-driad-amt-discovery]
+  ;; Unassigned   261-32767
      TA           32768;  DNSSEC Trust Authorities               [Weiler]           2005-12-13
      DLV          32769;  DNSSEC Lookaside Validation            [RFC4431]
   ;; Unassigned   32770-65279
@@ -224,7 +242,8 @@
 ;; Unassigned                         3
    NOTIFY                             4      ;[RFC1996]
    UPDATE                             5      ;[RFC2136]
-;; Unassigned                         6-15
+   DSO                                6      ;[RFC8490]
+;; Unassigned                         7-15
    )
 
   ;;; XXX: note the duplicate rcode assignment of 16. One is for the
@@ -246,7 +265,8 @@
    NXRRSET     8           ;RR Set that should exist does not    [RFC2136]
    NOTAUTH     9           ;Server Not Authoritative for zone    [RFC2136]
    NOTZONE     10          ;Name not contained in zone           [RFC2136]
-;; Unassigned  11-15
+   DSOTYPENI   11          ;DSO-TYPE Not Implemented             [RFC8490]
+;; Unassigned  12-15
    BADVERS     16          ;Bad OPT Version                      [RFC2671]
    BADSIG      16          ;TSIG Signature Failure               [RFC2845]
    BADKEY      17          ;Key not recognized                   [RFC2845]
@@ -255,6 +275,7 @@
    BADNAME     20          ;Duplicate key name                   [RFC2930]
    BADALG      21          ;Algorithm not supported              [RFC2930]
    BADTRUNC    22          ;Bad Truncation                       [RFC4635]
+   BADCOOKIE   23          ;Bad/missing Server Cookie            [RFC7873]
 ;; Unassigned  23-3840
 ;; Private Use 3841-4095                                         [RFC5395]
 ;; Unassigned  4096-65534
@@ -264,39 +285,36 @@
   ;; http://www.iana.org/assignments/dns-sec-alg-numbers/dns-sec-alg-numbers.txt
   ;; DNS Security Algorithm Numbers
   (define-mnemonics dnssec-algorithm
-   ;;   Mnemonic     Number            Description              Zone   Trans.                               Reference
-   ;;                                                          Signing  Sec.
-   ;;                   0    Reserved                                         [RFC4398][proposed standard]
-   RSAMD5               1   ;RSA/MD5 (deprecated, see 5)          N      Y    [RFC4034][proposed standard][RFC2537][proposed standard]
-   DH                   2   ;Diffie-Hellman                       N      Y    [RFC2539][proposed standard]
-                            ;                                                 [RFC3755][proposed standard][RFC2536][proposed standard][Federal
-                            ;                                                 Information Processing Standards Publication (FIPS PUB) 186, Digital
-   DSA                  3   ;DSA/SHA1                             Y      Y    Signature Standard, 18 May 1994.][Federal Information Processing
-                            ;                                                 Standards Publication (FIPS PUB) 180-1, Secure Hash Standard, 17
-                            ;                                                 April 1995. (Supersedes FIPS PUB 180 dated 11 May 1993.)]
-   ECC                  4   ;Reserved for Elliptic Curve
-   RSASHA1              5   ;RSA/SHA-1                            Y      Y    [RFC3755][proposed standard][RFC3110][proposed standard]
-   DSA-NSEC3-SHA1       6   ;DSA-NSEC3-SHA1                       Y      Y    [RFC5155][proposed standard]
-   RSASHA1-NSEC3-SHA1   7   ;RSASHA1-NSEC3-SHA1                   Y      Y    [RFC5155][proposed standard]
-   RSASHA256            8   ;RSA/SHA-256                          Y      *    [RFC5702][proposed standard]
-   ;;                   9    Unassigned
-   RSASHA512           10   ;RSA/SHA-512                          Y      *    [RFC5702][proposed standard]
-   ;;                  11    Unassigned
-   ECC-GOST            12   ;GOST R 34.10-2001                    Y      *    [RFC5933][standards track]
-   ;;                13-122  Unassigned
-   ;;                123-251 Reserved                                         [RFC6014][standards track]
-   INDIRECT            252  ;Reserved for Indirect Keys           N      N    [RFC4034][proposed standard]
-   PRIVATEDNS          253  ;Private algorithms - domain name     Y      Y    [RFC3755][proposed standard][RFC2535][proposed standard]
-   PRIVATEOID          254  ;Private algorithms - OID             Y      Y    [RFC3755][proposed standard][RFC2535][proposed standard]
-   ;;                  255   Reserved                                         [RFC4034][proposed standard]
-                    )
+
+   ;; Mnemonic         Number           Description         Zone   Trans.                                Reference
+   ;;                                                     Signing  Sec.
+   DELETE               0   ; Delete DS                      N      N    [RFC4034][RFC4398][RFC8078]
+   RSAMD5               1   ; RSA/MD5 (deprecated, see 5)    N      Y    [RFC3110][RFC4034]
+   DH                   2   ; Diffie-Hellman                 N      Y    [RFC2539][proposed standard]
+   ;;                                                                    [RFC3755][proposed standard][RFC2536][proposed standard]
+   DSA                  3   ; DSA/SHA1                       Y      Y
+   RSASHA1              5   ; RSA/SHA-1                      Y      Y    [RFC3110][RFC4034]
+   DSA-NSEC3-SHA1       6   ; DSA-NSEC3-SHA1                 Y      Y    [RFC5155][proposed standard]
+   RSASHA1-NSEC3-SHA1   7   ; RSASHA1-NSEC3-SHA1             Y      Y    [RFC5155][proposed standard]
+   RSASHA256            8   ; RSA/SHA-256                    Y      *    [RFC5702][proposed standard]
+   RSASHA512           10   ; RSA/SHA-512                    Y      *    [RFC5702][proposed standard]
+   ECC-GOST            12   ; GOST R 34.10-2001              Y      *    [RFC5933][standards track]
+   ECDSAP256SHA256     13   ; ECDSA Curve P-256 with SHA-256 Y      *    [RFC6605][standards track]
+   ECDSAP384SHA384     14   ; ECDSA Curve P-384 with SHA-384 Y      *    [RFC6605][standards track]
+   ED25519             15   ; Ed25519                        Y      *    [RFC8080][standards track]
+   ED448               16   ; Ed448                          Y      *    [RFC8080][standards track]
+   INDIRECT            252  ; Reserved for Indirect Keys     N      N    [RFC4034][proposed standard]
+   PRIVATEDNS          253  ; private algorithm              Y      Y    [RFC4034]
+   PRIVATEOID          254  ; private algorithm OID          Y      Y    [RFC4034]
+   )
 
   ;; http://www.iana.org/assignments/ds-rr-types/ds-rr-types.txt
   ;; Digest Algorithms
   (define-mnemonics dnssec-digest
      SHA-1 1
      SHA-256 2
-     GOST 3)
+     GOST 3
+     SHA-384 4)
 
   ;; http://www.iana.org/assignments/dnskey-flags/dnskey-flags.txt
   ;; DNSKEY RR Flags. Bits are counted from the wrong direction.
@@ -333,6 +351,8 @@
    ;; Reserved      0   [RFC4255]
       RSA           1  ;[RFC4255]
       DSA           2  ;[RFC4255]
+      ECDSA         3  ;[RFC6594]
+      Ed25519       4  ;[RFC7479]
       )
 
   ;; SSHFP RR types for fingerprint types
@@ -340,6 +360,7 @@
    ;; Description Value Reference
    ;; Reserved      0   [RFC4255]
       SHA-1         1  ;[RFC4255]
+      SHA-256       2  ;[RFC6594]
       )
 
   ;; TODO: check if this needs to be faster

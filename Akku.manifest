@@ -3,16 +3,13 @@
 
 (akku-package ("industria" "2.1.0-beta.0")
   (synopsis "Cryptography, OTR, SSH, OpenPGP, etc.")
-  (description "Industria is a collection of portable R6RS Scheme libraries for
-cryptography. It implements low-level algorithms like AES, RSA, DSA,
-ECDSA, etc and the high-level protocols OpenPGP, Off-The-Record
-messaging, DNS and Secure Shell (SSH).")
+  (description
+   "Industria is a collection of portable R6RS Scheme libraries for\ncryptography. It implements low-level algorithms like AES, RSA, DSA,\nECDSA, etc and the high-level protocols OpenPGP, Off-The-Record\nmessaging, DNS and Secure Shell (SSH).")
   (authors "Göran Weinholt <goran@weinholt.se>")
   (license "MIT")
-  (depends
-   ("chez-srfi" "~0.0.0-akku")
-   ("hashing" "^1.0.0")
-   ("ip-address" "^1.0.0")
-   ("struct-pack" "^1.0.0"))
-  (depends/dev
-   ("xitomatl" "~0.0.0-akku")))
+  (depends ("chez-srfi" "~0.0.0-akku")
+           ("hashing" "^1.0.0")
+           ("ip-address" "^1.0.0")
+           ("struct-pack" "^1.0.0"))
+  (depends/dev ("xitomatl" "~0.0.0-akku") ("r6rs-usocket" "^0.0.181217"))
+)
