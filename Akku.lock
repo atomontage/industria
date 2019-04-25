@@ -3,8 +3,8 @@
 (import (akku format lockfile))
 (projects
   ((name "chez-srfi")
-    (location (git "https://github.com/weinholt/chez-srfi.git"))
-    (revision "4b84c82a1e51d7dadc8e5a7dfe4c6f9f70818f54"))
+    (location (git "https://github.com/arcfide/chez-srfi"))
+    (revision "8296cf0394a73e74e63eb67901c0e7f25ab02a2f"))
   ((name "hashing")
     (location (git "https://github.com/weinholt/hashing.git"))
     (tag "v1.2.0")
@@ -17,8 +17,8 @@
   ((name "struct-pack")
     (location
       (git "https://github.com/weinholt/struct-pack.git"))
-    (tag "v1.1.0")
-    (revision "6c583e744154e31b529445824f858f734e6ad66e"))
+    (tag "v1.1.1")
+    (revision "11b71963793ed4a3bf761efdd83cf2fe123239ee"))
   ((name "xitomatl")
     (location (git "https://github.com/weinholt/xitomatl.git"))
     (revision "62a82439fc802950abb33cd19c5d8c6963cbefda")))
