@@ -50,8 +50,6 @@
 
 (define-record-type ed25519-private-key
   (opaque #t)
-  (sealed #t)
-  (nongenerative)
   (fields secret)
   (protocol
    (lambda (p)
