@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2010, 2011, 2012, 2017, 2018 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2011, 2012, 2017, 2018, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -32,6 +32,8 @@
 
 ;; TODO: http://permalink.gmane.org/gmane.ietf.secsh/6520 ?
 
+;; https://www.iana.org/assignments/ssh-parameters/ssh-parameters.xhtml#ssh-parameters-19
+
 (library (industria ssh public-keys)
   (export get-ssh-public-key
           ssh-public-key->bytevector
@@ -49,6 +51,7 @@
           (industria crypto dsa)
           (industria crypto ec)
           (industria crypto ecdsa)
+          (industria crypto eddsa)
           (industria crypto rsa)
           (industria ssh random-art))
 
@@ -74,12 +77,11 @@
              (put-bytevector p bv)))))
 
   (define (get-string p)
-    (utf8->string (get-bytevector-n p (get-unpack p "!L"))))
+    (get-bytevector-n p (get-unpack p "!L")))
 
-  (define (put-string p s)
-    (let ((bv (string->utf8 s)))
-      (put-bytevector p (pack "!L" (bytevector-length bv)))
-      (put-bytevector p bv)))
+  (define (put-string p bv)
+    (put-bytevector p (pack "!L" (bytevector-length bv)))
+    (put-bytevector p bv))
 
   ;; ssh-dss           REQUIRED     sign   Raw DSS Key
   ;; ssh-rsa           RECOMMENDED  sign   Raw RSA Key
@@ -90,7 +92,7 @@
   ;; when stored in files.
   (define (get-ssh-public-key p)
     (define who 'get-ssh-public-key)
-    (let ((type (get-string p)))
+    (let ((type (utf8->string (get-string p))))
       (cond ((string=? type "ssh-rsa")
              (let* ((e (get-mpint p))
                     (n (get-mpint p)))
@@ -102,9 +104,15 @@
                     (y (get-mpint p)))
                (make-dsa-public-key p* q g y)))
             ((string-prefix? "ecdsa-sha2-" type)
-             (let* ((id (get-string p)) ;curve ID
+             (let* ((id (utf8->string (get-string p))) ;curve ID
                     (Q (get-mpint p)))  ;public point
                (make-ecdsa-sha-2-public-key (id->curve id who) Q)))
+            ;; https://datatracker.ietf.org/doc/draft-ietf-curdle-ssh-ed25519-ed448/
+            ((string=? type "ssh-ed25519")
+             (make-ed25519-public-key (get-string p)))
+            #;
+            ((string=? type "ssh-ed448")
+             (make-ed448-public-key (get-string p)))
             (else
              (error 'get-ssh-public-key
                     "Unknown public key algorithm"
@@ -132,6 +140,7 @@
           ((ecdsa-sha-2-public-key? key)
            (string-append "ecdsa-sha2-"
                           (curve->id (ecdsa-public-key-curve key) who)))
+          ((ed25519-public-key? key) "ssh-ed25519")
           (else
            (error 'ssh-public-key-algorithm
                   "Unknown public key algorithm"
@@ -142,11 +151,11 @@
     (call-with-bytevector-output-port
       (lambda (p)
         (cond ((rsa-public-key? key)
-               (put-string p "ssh-rsa")
+               (put-string p (string->utf8 "ssh-rsa"))
                (put-mpint p (rsa-public-key-e key))
                (put-mpint p (rsa-public-key-n key)))
               ((dsa-public-key? key)
-               (put-string p "ssh-dss")
+               (put-string p (string->utf8 "ssh-dss"))
                (put-mpint p (dsa-public-key-p key))
                (put-mpint p (dsa-public-key-q key))
                (put-mpint p (dsa-public-key-g key))
@@ -158,10 +167,13 @@
                (let ((id (curve->id (ecdsa-public-key-curve key) who))
                      (Q (elliptic-point->bytevector (ecdsa-public-key-Q key)
                                                     (ecdsa-public-key-curve key))))
-                 (put-string p (string-append "ecdsa-sha2-" id))
-                 (put-string p id)
+                 (put-string p (string->utf8 (string-append "ecdsa-sha2-" id)))
+                 (put-string p (string->utf8 id))
                  (put-bytevector p (pack "!L" (bytevector-length Q)))
                  (put-bytevector p Q)))
+              ((ed25519-public-key? key)
+               (put-string p (string->utf8 "ssh-ed25519"))
+               (put-string p (ed25519-public-key-value key)))
               (else
                (error who "Unknown public key algorithm" key))))))
 
@@ -202,6 +214,8 @@
                             (values "DSA" dsa-public-key-length))
                            ((ecdsa-public-key? key)
                             (values "ECDSA" ecdsa-public-key-length))
+                           ((ed25519-public-key? key)
+                            (values "ED25519" eddsa-public-key-length))
                            (else
                             (values "UNKNOWN" (lambda (_) +nan.0))))))
          (let ((header (string-append prefix " " (number->string (length key)))))
