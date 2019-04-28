@@ -4,7 +4,7 @@
 (projects
   ((name "chez-srfi")
     (location (git "https://github.com/arcfide/chez-srfi"))
-    (revision "8296cf0394a73e74e63eb67901c0e7f25ab02a2f"))
+    (revision "daf5ebd67ef36fd2388d6a62e278ba8d04b11abf"))
   ((name "hashing")
     (location (git "https://github.com/weinholt/hashing.git"))
     (tag "v1.2.0")
