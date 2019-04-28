@@ -1,6 +1,6 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
 ;; Bytevector utilities
-;; Copyright © 2009, 2010, 2012, 2018 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2009, 2010, 2012, 2018, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -108,29 +108,51 @@
     ((bv c)
      (bytevector-u8-index-right bv c 0 (bytevector-length bv)))))
 
-(define (bytevector->uint bv)
-  (if (zero? (bytevector-length bv))
-      0
-      (bytevector-uint-ref bv 0 (endianness big) (bytevector-length bv))))
+(define bytevector->uint
+  (case-lambda
+    ((bv)
+     (bytevector->uint bv (endianness big)))
+    ((bv endian)
+     (if (zero? (bytevector-length bv))
+         0
+         (bytevector-uint-ref bv 0 endian (bytevector-length bv))))))
 
-(define (bytevector->sint bv)
-  (if (zero? (bytevector-length bv))
-      0
-      (bytevector-sint-ref bv 0 (endianness big) (bytevector-length bv))))
+(define bytevector->sint
+  (case-lambda
+    ((bv)
+     (bytevector->sint bv (endianness big)))
+    ((bv endian)
+     (if (zero? (bytevector-length bv))
+         0
+         (bytevector-sint-ref bv 0 endian (bytevector-length bv))))))
 
-(define (uint->bytevector int)
-  (if (zero? int)
-      #vu8()
-      (let ((ret (make-bytevector (div (bitwise-and -8 (+ 7 (bitwise-length int))) 8))))
-        (bytevector-uint-set! ret 0 int (endianness big) (bytevector-length ret))
-        ret)))
+(define uint->bytevector
+  (case-lambda
+    ((int)
+     (uint->bytevector int (endianness big)))
+    ((int endian)
+     (uint->bytevector int endian
+                       (div (bitwise-and -8 (+ 7 (bitwise-length int))) 8)))
+    ((int endian len)
+     (if (zero? int)
+         #vu8()
+         (let ((ret (make-bytevector len)))
+           (bytevector-uint-set! ret 0 int endian (bytevector-length ret))
+           ret)))))
 
-(define (sint->bytevector int)
-  (if (zero? int)
-      #vu8()
-      (let ((ret (make-bytevector (div (bitwise-and -8 (+ 8 (bitwise-length int))) 8))))
-        (bytevector-sint-set! ret 0 int (endianness big) (bytevector-length ret))
-        ret)))
+(define sint->bytevector
+  (case-lambda
+    ((int)
+     (sint->bytevector int (endianness big)))
+    ((int endian)
+     (sint->bytevector int endian
+                       (div (bitwise-and -8 (+ 8 (bitwise-length int))) 8)))
+    ((int endian len)
+     (if (zero? int)
+         #vu8()
+         (let ((ret (make-bytevector len)))
+           (bytevector-sint-set! ret 0 int endian (bytevector-length ret))
+           ret)))))
 
 ;; Drop-in replacement for bytevector=? that does not leak
 ;; information about the outcome of the comparison via the time it

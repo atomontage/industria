@@ -14,7 +14,7 @@
 This manual is for the Industria libraries, a collection of
 R6RS Scheme libraries.
 
-Copyright @copyright{} 2010, 2011, 2012, 2013, 2016, 2017, 2018 G@"oran Weinholt @email{goran@@weinholt.se}.
+Copyright @copyright{} 2010, 2011, 2012, 2013, 2016, 2017, 2018, 2019 G@"oran Weinholt @email{goran@@weinholt.se}.
 
 @quotation
 Permission is hereby granted, free of charge, to any person obtaining a

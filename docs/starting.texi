@@ -3,14 +3,14 @@
 
 The simple version: install Akku from
 @url{https://github.com/weinholt/akku}. Run @code{akku install} in the
-@code{industria} directory. This fetches the dependencies recorded in
-@code{Akku.lock} and installs everything to @code{.akku}. Run
-@code{source .akku/bin/activate} to start using Industria in your R6RS
-Scheme of choice.
+your project directory. This fetches the Industria and its
+dependencies and install them to @code{.akku}. Run @code{.akku/env} to
+start using Industria in your R6RS Scheme of choice.
 
-The longer version: extend your Scheme library search path to include
-the @code{industria} directory, e.g.@: if you're using Chez Scheme on a Unix
-system and you unpacked Industria in @code{~/scheme}:
+The longer, more manual, version: extend your Scheme library search
+path to include the @code{industria} directory, e.g.@: if you're using
+Chez Scheme on a Unix system and you unpacked Industria in
+@code{~/scheme}:
 @verbatim
 export CHEZSCHEMELIBDIRS=$HOME/scheme
 @end verbatim
