@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2009, 2010, 2012, 2017, 2018 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2009, 2010, 2012, 2017, 2018, 2019 Göran Weinholt <goran@weinholt.se>
 ;; SPDX-License-Identifier: MIT
 #!r6rs
 
@@ -15,7 +15,7 @@
 
 (library (industria crypto rsa)
   (export
-    make-rsa-public-key rsa-public-key?
+    make-rsa-public-key rsa-public-key? rsa-public-key=?
     rsa-public-key-modulus
     rsa-public-key-public-exponent
     rsa-public-key-n
@@ -106,6 +106,12 @@
 
 (define rsa-public-key-n rsa-public-key-modulus)
 (define rsa-public-key-e rsa-public-key-public-exponent)
+
+(define (rsa-public-key=? a b)
+  (for-all (lambda (f)
+             (equal? (f a) (f b)))
+           (list rsa-public-key-n
+                 rsa-public-key-e)))
 
 (define (rsa-public-key-length key)
   (bitwise-length (rsa-public-key-modulus key)))
@@ -288,7 +294,7 @@
   (define (combine x y)
     ;; Return zero if one of the arguments is zero. Otherwise return
     ;; a positive byte.
-    (let ((z (fx* x y)))              ;TODO: something faster
+    (let ((z (fx* x y)))
       (fxior (fxarithmetic-shift-right z 8) (fxand z #xff))))
   (define (=? x y)
     (fx- (fxarithmetic-shift-right (fxnot (fxior (fx- y x) (fx- x y)))

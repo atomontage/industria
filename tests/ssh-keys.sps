@@ -12,12 +12,12 @@
   (industria crypto eddsa)
   (industria crypto rsa)
   (industria ssh public-keys)
+  (industria ssh private-keys)
   (industria strings)
   (srfi :64 testing)
   (rnrs))
 
 (test-begin "ssh-public-key-dsa")
-#;
 (define test:dsa-private-key
   "-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABsQAAAAdzc2gtZH
@@ -64,13 +64,28 @@ AAAAD3dlaW5ob2x0QHRlYXBvdAECAwQ=
   (test-equal test:dsa-fingerprint (ssh-public-key-fingerprint key))
   (test-equal test:dsa-random-art
               (string-split (ssh-public-key-random-art key) #\newline))
-  (test-equal "ssh-dss" (ssh-public-key-algorithm key)))
+  (test-equal "ssh-dss" (ssh-public-key-algorithm key))
+  (let* ((privkey* (get-ssh-private-keys
+                    (open-string-input-port test:dsa-private-key)))
+         (pk0 (car privkey*)))
+    (test-assert (null? (cdr privkey*)))
+    (test-assert (openssh-private-key? pk0))
+    (test-equal "weinholt@teapot" (openssh-private-key-comment pk0))
+    (test-assert (dsa-public-key=?
+                  key (openssh-private-key-public pk0)))
+    (test-assert (dsa-public-key=?
+                  key (dsa-private->public (openssh-private-key-private pk0))))
+    (test-assert
+     (let*-values ([(Hm) (make-bytevector 32 0)]
+                   [(r s)
+                    (dsa-create-signature Hm (openssh-private-key-private pk0))])
+       (dsa-verify-signature Hm key r s)))))
 (test-end)
 
 (test-begin "ssh-public-key-rsa")
-#;
 (define test:rsa-private-key
-  "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
+  "-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
 NhAAAAAwEAAQAAAQEAoPGJ+lCuf06TBgASF0wx97af2IO4iD7NxWh5NOpPg1L4aiV1GqGX
 CLVA15Wk5ty2kqD8Rl/zNPfdNqWnc9Thjl9TFqUzfVQuWi7Xv9j7fBuF07OnxDnS92Whce
 9RkQu4EC0Tu8xe879CeaYCZ8mYiT5tSr8MgLf/y8U78Q+NHh5Mm0uJNt3SaS/TEpsvu+5a
@@ -94,7 +109,8 @@ CUYdK3BpmYEatttoVZNSxtd7Xd9HaYdg5By5JOSNSFZa8QVS50zpJl7ZoI+2YDftnS3WLb
 /RTtq1RHJKAWcBXzswMk7zAiCfUox6nI7V1tuQHSl556gQzwAAAIEAwi+nhPmcDpUscgcZ
 w2UO9zAS3+e2BIEo+MXjWPVkqzRGo4LAovYqUALqkkRyxWZutZQbIcK95T7lLYkOCr4UFp
 ybrynKDwMZ4ZyaIPrxLx5a1X49FYGcGJl+N3j7I9ES0p2Ez7JFcJryXXWjQJxKo/9zCg6Q
-JxBTe5TrpiR7RiMAAAAPd2VpbmhvbHRAdGVhcG90AQIDBA==")
+JxBTe5TrpiR7RiMAAAAPd2VpbmhvbHRAdGVhcG90AQIDBA==
+-----END OPENSSH PRIVATE KEY-----")
 (define test:rsa-public-key
   "AAAAB3NzaC1yc2EAAAADAQABAAABAQCg8Yn6UK5/TpMGABIXTDH3tp/Yg7iIPs3FaHk06k+DUvhqJXUaoZcItUDXlaTm3LaSoPxGX/M09902padz1OGOX1MWpTN9VC5aLte/2Pt8G4XTs6fEOdL3ZaFx71GRC7gQLRO7zF7zv0J5pgJnyZiJPm1KvwyAt//LxTvxD40eHkybS4k23dJpL9MSmy+77loUMulNMeuapDvjd38DM6HFWi6mf6I786c30cprU2zC/oowtde5sitLy6I5lVXd5aKZpkUpDPd4wrVxuwZgO/NnznpDLqd2LR3du/eaTG0h96AQ/XLnBGCSMd77PIopxE+p319AfJWeUmqO3FnQB+ZN")
 (define test:rsa-fingerprint
@@ -119,11 +135,26 @@ JxBTe5TrpiR7RiMAAAAPd2VpbmhvbHRAdGVhcG90AQIDBA==")
   (test-equal test:rsa-fingerprint (ssh-public-key-fingerprint key))
   (test-equal test:rsa-random-art
               (string-split (ssh-public-key-random-art key) #\newline))
-  (test-equal "ssh-rsa" (ssh-public-key-algorithm key)))
+  (test-equal "ssh-rsa" (ssh-public-key-algorithm key))
+  (let* ((privkey* (get-ssh-private-keys
+                    (open-string-input-port test:rsa-private-key)))
+         (pk0 (car privkey*)))
+    (test-assert (null? (cdr privkey*)))
+    (test-assert (openssh-private-key? pk0))
+    (test-equal "weinholt@teapot" (openssh-private-key-comment pk0))
+    (test-assert (rsa-public-key=?
+                  key (openssh-private-key-public pk0)))
+    (test-assert (rsa-public-key=?
+                  key (rsa-private->public (openssh-private-key-private pk0))))
+    (let* ([Hm (make-bytevector 32 #xaa)]
+           [sig (rsa-pkcs1-encrypt-digest 'sha-256 Hm
+                                          (openssh-private-key-private pk0))]
+           [H-signed (rsa-pkcs1-decrypt-digest sig key)])
+      (test-equal Hm (cadr H-signed)))))
 (test-end)
 
+;;; TODO: test the other curves
 (test-begin "ssh-public-key-ecdsa")
-#;
 (define test:ecdsa-private-key
   "-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNlY2RzYS
@@ -158,11 +189,24 @@ cG90AQ==
   (test-equal test:ecdsa-fingerprint (ssh-public-key-fingerprint key))
   (test-equal test:ecdsa-random-art
               (string-split (ssh-public-key-random-art key) #\newline))
-  (test-equal "ecdsa-sha2-nistp256" (ssh-public-key-algorithm key)))
+  (test-equal "ecdsa-sha2-nistp256" (ssh-public-key-algorithm key))
+  (let* ((privkey* (get-ssh-private-keys
+                    (open-string-input-port test:ecdsa-private-key)))
+         (pk0 (car privkey*)))
+    (test-assert (null? (cdr privkey*)))
+    (test-assert (openssh-private-key? pk0))
+    (test-equal "weinholt@teapot" (openssh-private-key-comment pk0))
+    (test-assert (ecdsa-public-key=?
+                  key (openssh-private-key-public pk0)))
+    (test-assert (ecdsa-public-key=?
+                  key (ecdsa-private->public (openssh-private-key-private pk0))))
+    (let*-values ([(msg) (make-bytevector 32 #xaa)]
+                  [(r s)
+                   (ecdsa-create-signature msg (openssh-private-key-private pk0))])
+      (test-assert (ecdsa-verify-signature msg key r s)))))
 (test-end)
 
 (test-begin "ssh-public-key-ed25519")
-#;
 (define test:ed25519-private-key
   "-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
@@ -195,7 +239,20 @@ EtKejcLilkzZ6bgUSPBAAAAAD3dlaW5ob2x0QHRlYXBvdAECAwQFBg==
   (test-equal test:ed25519-fingerprint (ssh-public-key-fingerprint key))
   (test-equal test:ed25519-random-art
               (string-split (ssh-public-key-random-art key) #\newline))
-  (test-equal "ssh-ed25519" (ssh-public-key-algorithm key)))
+  (test-equal "ssh-ed25519" (ssh-public-key-algorithm key))
+  (let* ((privkey* (get-ssh-private-keys
+                    (open-string-input-port test:ed25519-private-key)))
+         (pk0 (car privkey*)))
+    (test-assert (null? (cdr privkey*)))
+    (test-assert (openssh-private-key? pk0))
+    (test-equal "weinholt@teapot" (openssh-private-key-comment pk0))
+    (test-assert (ed25519-public-key=?
+                  key (openssh-private-key-public pk0)))
+    (test-assert (ed25519-public-key=?
+                  key (ed25519-private->public (openssh-private-key-private pk0))))
+    (let* ([msg (make-bytevector 32 #xaa)]
+           [sig (ed25519-sign (openssh-private-key-private pk0) msg)])
+      (test-assert (ed25519-verify key msg sig)))))
 (test-end)
 
 (exit (if (zero? (test-runner-fail-count (test-runner-get))) 0 1))

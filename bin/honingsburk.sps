@@ -269,7 +269,7 @@
                   (server (make-ssh-server i o keys)))))))))
 
 (define (get-private-key filename)
-  (call-with-port (open-input-file filename) get-ssh-private-key))
+  (car (call-with-port (open-input-file filename) get-ssh-private-keys)))
 
 (apply
  (case-lambda
@@ -279,7 +279,7 @@
    ((who . _)
     (print "Usage: " who " port hostkey.pem")
     (print "Hint: generate the key with one of these commands:")
-    (print " ssh-keygen -t rsa -f demo.pem -m PEM")
+    (print " ssh-keygen -t rsa -f demo.pem -m PEM    # empty password")
     (print " openssl dsaparam 1024 | openssl gendsa /dev/stdin > demo.pem")
     (print " certtool --dsa --bits 1024 -p > demo.pem")
     (exit 1)))

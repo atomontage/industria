@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2011, 2012, 2018 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2011, 2012, 2018, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -23,7 +23,7 @@
 ;; Elliptic Curve Digital Signature Algorithm
 
 (library (industria crypto ecdsa)
-  (export make-ecdsa-public-key ecdsa-public-key?
+  (export make-ecdsa-public-key ecdsa-public-key? ecdsa-public-key=?
           ecdsa-public-key-curve
           ecdsa-public-key-Q
           ecdsa-public-key-length
@@ -39,7 +39,7 @@
 
           ecdsa-verify-signature
           ecdsa-create-signature
-          
+
           make-ecdsa-sha-2-public-key ecdsa-sha-2-public-key?
           make-ecdsa-sha-2-private-key ecdsa-sha-2-private-key?
           ecdsa-sha-2-verify-signature
@@ -61,6 +61,10 @@
        (lambda (curve Q)
          (p curve (->elliptic-point Q curve))))))
 
+  (define (ecdsa-public-key=? a b)
+    (and (equal? (ecdsa-public-key-curve a) (ecdsa-public-key-curve b))
+         (equal? (ecdsa-public-key-Q a) (ecdsa-public-key-Q b))))
+
   (define-record-type ecdsa-private-key
     (opaque #t)
     (nongenerative ecdsa-private-key-2fb1085c-38ad-48ba-98de-463ab54036d3)
@@ -72,10 +76,13 @@
        (case-lambda
          ((curve)
           (let-values (((d Q) (make-random-key curve)))
+            (assert (integer? d))
             (p curve d Q)))
          ((curve d)
+          (assert (integer? d))
           (p curve d (ec* d (elliptic-curve-G curve) curve)))
          ((curve d Q)
+          (assert (integer? d))
           (p curve d Q))))))
 
   (define (ecdsa-private->public key)
@@ -113,7 +120,7 @@
           (else
            (error 'ecdsa-private-key-from-bytevector
                   "Unimplemented elliptic curve" oid))))
-  
+
   (define (ecdsa-private-key-from-bytevector bv)
     ;; This is from RFC 5915, which is probably more general than
     ;; ECDSA. Should probably be called
@@ -151,7 +158,7 @@
           ;; This is weird, but the leftmost nlen bits are apparently
           ;; what should be returned in this case, so....
           (bitwise-arithmetic-shift-right H (- hlen nlen)))))
-  
+
   ;; Returns #t if the signature is valid.
   (define (ecdsa-verify-signature hash key r s)
     (let* ((curve (ecdsa-public-key-curve key))
@@ -224,4 +231,3 @@
       (make-ecdsa-sha-2-private-key (ecdsa-private-key-curve key)
                                     (ecdsa-private-key-d key)
                                     (ecdsa-private-key-Q key)))))
-

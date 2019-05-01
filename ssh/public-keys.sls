@@ -54,36 +54,8 @@
           (industria crypto ecdsa)
           (industria crypto eddsa)
           (industria crypto rsa)
-          (industria ssh random-art))
-
-  (define (mpnegative? bv)
-    (and (> (bytevector-length bv) 1)
-         (fxbit-set? (bytevector-u8-ref bv 0) 7)))
-
-  (define (get-mpint p)
-    (let ((bv (get-bytevector-n p (get-unpack p "!L"))))
-      (when (mpnegative? bv)
-        (assertion-violation 'get-ssh-public-key
-                             "Refusing to read a negative mpint"))
-      (bytevector->uint bv)))
-
-  (define (put-mpint p i)
-    (let ((bv (uint->bytevector i)))
-      (cond ((mpnegative? bv)
-             ;; Prevent this from being considered a negative number
-             (put-bytevector p (pack "!L" (+ 1 (bytevector-length bv))))
-             (put-u8 p 0)
-             (put-bytevector p bv))
-            (else
-             (put-bytevector p (pack "!L" (bytevector-length bv)))
-             (put-bytevector p bv)))))
-
-  (define (get-string p)
-    (get-bytevector-n p (get-unpack p "!L")))
-
-  (define (put-string p bv)
-    (put-bytevector p (pack "!L" (bytevector-length bv)))
-    (put-bytevector p bv))
+          (industria ssh random-art)
+          (industria ssh private serialize))
 
   ;; ssh-dss           REQUIRED     sign   Raw DSS Key
   ;; ssh-rsa           RECOMMENDED  sign   Raw RSA Key
@@ -94,7 +66,7 @@
   ;; when stored in files.
   (define (get-ssh-public-key p)
     (define who 'get-ssh-public-key)
-    (let ((type (utf8->string (get-string p))))
+    (let ((type (get-string p)))
       (cond ((string=? type "ssh-rsa")
              (let* ((e (get-mpint p))
                     (n (get-mpint p)))
@@ -106,15 +78,15 @@
                     (y (get-mpint p)))
                (make-dsa-public-key p* q g y)))
             ((string-prefix? "ecdsa-sha2-" type)
-             (let* ((id (utf8->string (get-string p))) ;curve ID
+             (let* ((id (get-string p)) ;curve ID
                     (Q (get-mpint p)))  ;public point
                (make-ecdsa-sha-2-public-key (id->curve id who) Q)))
             ;; https://datatracker.ietf.org/doc/draft-ietf-curdle-ssh-ed25519-ed448/
             ((string=? type "ssh-ed25519")
-             (make-ed25519-public-key (get-string p)))
+             (make-ed25519-public-key (get-bytevector p)))
             #;
             ((string=? type "ssh-ed448")
-             (make-ed448-public-key (get-string p)))
+             (make-ed448-public-key (get-bytevector p)))
             (else
              (assertion-violation 'get-ssh-public-key
                                   "Unknown public key algorithm"

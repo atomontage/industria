@@ -16,7 +16,7 @@
     eddsa-public-key-length
     ed25519-public-key-value
 
-    make-ed25519-public-key ed25519-public-key?
+    make-ed25519-public-key ed25519-public-key? ed25519-public-key=?
     make-eddsa-private-key eddsa-private-key?
     make-ed25519-private-key ed25519-private-key?
     ed25519-private-key-secret
@@ -44,6 +44,9 @@
      (lambda (value)
        (assert (fx=? (bytevector-length value) 32))
        ((p) value)))))
+
+(define (ed25519-public-key=? a b)
+  (equal? (ed25519-public-key-value a) (ed25519-public-key-value b)))
 
 (define-record-type eddsa-private-key
   (opaque #t))
