@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2010, 2011, 2012, 2017 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2011, 2012, 2017, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -64,9 +64,9 @@
           channel-open/forwarded-tcpip-connected-port
           channel-open/forwarded-tcpip-originator-address
           channel-open/forwarded-tcpip-originator-port
-                    
+
           channel-open/session? make-channel-open/session
-          
+
           channel-open/x11? make-channel-open/x11
           channel-open/x11-originator-address
           channel-open/x11-originator-port
@@ -159,10 +159,11 @@
           SSH-OPEN-RESOURCE-SHORTAGE
           ;; Types channel-extended-data
           SSH-EXTENDED-DATA-STDERR)
-  (import (rnrs)
+  (import (except (rnrs (6)) put-string)
           (srfi :26 cut)
           (industria buffer)
           (industria ssh private)
+          (industria ssh private serialize)
           (struct pack))
 
   ;; Message numbers

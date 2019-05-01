@@ -153,7 +153,6 @@ JxBTe5TrpiR7RiMAAAAPd2VpbmhvbHRAdGVhcG90AQIDBA==
       (test-equal Hm (cadr H-signed)))))
 (test-end)
 
-;;; TODO: test the other curves
 (test-begin "ssh-public-key-ecdsa")
 (define test:ecdsa-private-key
   "-----BEGIN OPENSSH PRIVATE KEY-----

@@ -73,12 +73,13 @@
           userauth-request/public-key-algorithm
           userauth-request/public-key-key
           sign-userauth-request/public-key)
-  (import (rnrs)
+  (import (except (rnrs (6)) put-string)
           (industria crypto dsa)
           (industria crypto rsa)
           (industria ssh public-keys)
           (industria buffer)
           (industria ssh private)
+          (industria ssh private serialize)
           (struct pack))
 
   ;; Message numbers

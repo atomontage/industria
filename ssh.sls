@@ -67,7 +67,7 @@
     ;; Debugging parameter
     (rename (debug ssh-debugging))
     ssh-debugging-port)
-  (import (rnrs)
+  (import (except (rnrs (6)) put-string)
           (only (srfi :1 lists) iota append-map)
           (only (srfi :13 strings) string-every string-join
                 string-trim-right string-prefix?)
@@ -83,6 +83,7 @@
           (industria ssh connection)
           (industria ssh kexdh)
           (industria ssh private)
+          (industria ssh private serialize)
           (industria ssh transport)
           (industria ssh userauth)
           (industria strings)

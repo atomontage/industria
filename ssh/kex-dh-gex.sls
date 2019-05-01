@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2010, 2011, 2012 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2011, 2012, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -48,7 +48,7 @@
           kex-dh-gex-reply-signature
 
           make-kex-dh-gex-key-exchanger)
-  (import (rnrs)
+  (import (except (rnrs (6)) put-string)
           (srfi :39 parameters)
           (industria bytevectors)
 
@@ -61,7 +61,8 @@
 
           (industria ssh public-keys)
 
-          (industria ssh private))
+          (industria ssh private)
+          (industria ssh private serialize))
 
   ;; Used by the server part to pick a D-H group. These should really
   ;; be custom generated groups. In OpenSSH they distribute a long

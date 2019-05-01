@@ -12,7 +12,7 @@
     put-record put-bvstring put-name-list put-mpint
     integer->mpint
 
-    get-uint32 get-mpint put-mpint get-bytevector get-string put-string)
+    get-uint32 get-mpint get-bytevector get-string put-string)
   (import
     (except (rnrs (6)) put-string)
     (only (srfi :13 strings) string-join)

@@ -31,11 +31,12 @@
           make-kexdh-reply kexdh-reply? kexdh-reply-f
           kexdh-reply-host-key kexdh-reply-signature
           make-kex-dh-key-exchanger)
-  (import (rnrs)
+  (import (except (rnrs (6)) put-string)
           (industria crypto dh)
           (hashing sha-1)
           (industria ssh public-keys)
-          (industria ssh private))
+          (industria ssh private)
+          (industria ssh private serialize))
 
 ;;; Messages
 

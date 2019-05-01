@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2010, 2012 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2012, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -30,8 +30,8 @@
 
           disconnect? make-disconnect disconnect-code
           disconnect-message disconnect-language
-          
-          ignore? make-ignore 
+
+          ignore? make-ignore
 
           unimplemented? make-unimplemented
           unimplemented-sequence-number
@@ -58,8 +58,8 @@
           kexinit-languages-server-to-client
           kexinit-first-kex-packet-follows?
           kexinit-reserved
-          
-          newkeys? make-newkeys 
+
+          newkeys? make-newkeys
 
           SSH-DISCONNECT-HOST-NOT-ALLOWED-TO-CONNECT
           SSH-DISCONNECT-PROTOCOL-ERROR
@@ -76,9 +76,10 @@
           SSH-DISCONNECT-AUTH-CANCELLED-BY-USER
           SSH-DISCONNECT-NO-MORE-AUTH-METHODS-AVAILABLE
           SSH-DISCONNECT-ILLEGAL-USER-NAME)
-  (import (rnrs)
+  (import (except (rnrs (6)) put-string)
           (industria buffer)
           (industria ssh private)
+          (industria ssh private serialize)
           (struct pack))
 
   (define SSH-MSG-DISCONNECT 1)

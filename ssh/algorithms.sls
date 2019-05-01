@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2010, 2011, 2012 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2011, 2012, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -86,7 +86,7 @@
   (define keyalgs
     '("rsa-sha2-512" "rsa-sha2-256" "ssh-rsa"
       "ecdsa-sha2-nistp256" "ecdsa-sha2-nistp384" "ecdsa-sha2-nistp521"
-      ;; "ssh-ed25519"
+      "ssh-ed25519"
       "ssh-dss"))
 
   (define preferred-server-host-key-algorithms

@@ -29,7 +29,7 @@
           verify-signature hash-kex-data
           algorithm-can-sign? algorithm-can-verify?
           private->public prf-sha-1 prf-sha-256)
-  (import (rnrs)
+  (import (except (rnrs (6)) put-string)
           (only (srfi :13 strings) string-prefix?)
           (industria bytevectors)
           (industria crypto dsa)
@@ -42,7 +42,8 @@
           (industria ssh public-keys)
           (industria buffer)
           (struct pack)
-          (industria strings))
+          (industria strings)
+          (industria ssh private serialize))
 
   (define (private->public key)
     (cond ((rsa-private-key? key)
@@ -66,7 +67,7 @@
               "ecdsa-sha2-nistp256"
               "ecdsa-sha2-nistp384"
               "ecdsa-sha2-nistp521"
-              ;; "ssh-ed25519"
+              "ssh-ed25519"
               "ssh-dss")))
 
   (define (algorithm-can-verify? algorithm)
@@ -77,7 +78,7 @@
               "ecdsa-sha2-nistp256"
               "ecdsa-sha2-nistp384"
               "ecdsa-sha2-nistp521"
-              ;; "ssh-ed25519"
+              "ssh-ed25519"
               "ssh-dss")))
 
   (define (parse-signature sig)
@@ -98,6 +99,8 @@
                       (r (bytevector->uint (get blob)))
                       (s (bytevector->uint (get blob))))
                  (list type r s)))
+              ((member type '("ssh-ed25519"))
+               (list type (get p)))
               (else
                (error 'parse-signature "Unimplemented signature algorithm"
                       type))))))
@@ -145,6 +148,11 @@
              (let ((sig (extract)))
                (put-bytevector p (pack "!L" (bytevector-length sig)))
                (put-bytevector p sig))))
+          ((and (ed25519-private-key? key) (member keyalg '("ssh-ed25519")))
+           (let ((sig (ed25519-sign key msg)))
+             (put-bvstring p "ssh-ed25519")
+             (put-bytevector p (pack "!L" (bytevector-length sig)))
+             (put-bytevector p sig)))
           (else
            (error 'make-signature
                   "Unimplemented public key algorithm"
@@ -164,6 +172,8 @@
         ((rsa-public-key? key)
          (let ((sig (cadr (rsa-pkcs1-decrypt-digest (cadr signature) key))))
            (cond
+             ((not (string=? keyalg (car signature)))
+              'bad)
              ((and (string=? keyalg "ssh-rsa")
                    (fx=? (bytevector-length sig) (sha-1-length)))
               (if (sha-1-hash=? (sha-1 H) sig) 'ok 'bad))
@@ -175,13 +185,21 @@
               (if (sha-256-hash=? (sha-256 H) sig) 'ok 'bad))
              (else 'bad))))
         ((dsa-public-key? key)
-         (if (dsa-verify-signature (sha-1->bytevector (sha-1 H))
-                                   key (cadr signature)
-                                   (caddr signature))
+         (if (and (string=? keyalg "ssh-dss")
+                  (string=? keyalg (car signature))
+                  (dsa-verify-signature (sha-1->bytevector (sha-1 H))
+                                        key (cadr signature)
+                                        (caddr signature)))
              'ok 'bad))
         ((ecdsa-sha-2-public-key? key)
-         (if (ecdsa-sha-2-verify-signature H key (cadr signature)
-                                           (caddr signature))
+         (if (and (string=? keyalg (car signature))
+                  (ecdsa-sha-2-verify-signature H key (cadr signature)
+                                                (caddr signature)))
+             'ok 'bad))
+        ((ed25519-public-key? key)
+         (if (and (string=? keyalg "ssh-ed25519")
+                  (string=? keyalg (car signature))
+                  (ed25519-verify key H (cadr signature)))
              'ok 'bad))
         (else
          (error 'verify-signature
