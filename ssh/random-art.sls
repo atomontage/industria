@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2010, 2012, 2018 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2012, 2018, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -47,19 +47,23 @@
   (define chars " .o+=*BOX@%&#/^SE")
 
   (define random-art-style-ascii
-    (vector #\+ #\- "[" "]" "+\n"
-            #\|             "|\n"
-            #\+ #\-         "+\n"))
+    '#(#\+ #\- "[" "]" "+\n"
+       #\|             "|\n"
+       #\+ #\-         "+\n"))
 
   (define random-art-style-ascii-2
-    (vector #\, #\- "[" "]" ".\n"
-            #\|             "|\n"
-            #\` #\-         "'\n"))
+    '#(#\, #\- "[" "]" ".\n"
+       #\|             "|\n"
+       #\` #\-         "'\n"))
 
   (define random-art-style-unicode
-    (vector #\╭ #\─ "┤" "├" "╮\n"
-            #\│             "│\n"
-            #\╰ #\─         "╯\n"))
+    '#(#\x256D #\x2500 "\x2524;" "\x251C;" "\x256E;\n"
+       #\x2502                             "\x2502;\n"
+       #\x2570 #\x2500                     "\x256F;\n"))
+
+  ;; '#(#\╭ #\─ "┤" "├" "╮\n"
+  ;;    #\│             "│\n"
+  ;;    #\╰ #\─         "╯\n")
 
   (define random-art-box-style (make-parameter random-art-style-ascii))
 
