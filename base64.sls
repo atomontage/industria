@@ -269,8 +269,8 @@
                      (string-suffix? "-----" line))
                 (let* ((type (substring line 11 (- (string-length line) 5)))
                        (endline (string-append "-----END " type "-----")))
-                  (let-values (((outp extract) (open-bytevector-output-port)))
-                    (let lp ((line (get-first-data-line port)))
+                  (let-values ([(outp extract) (open-bytevector-output-port)])
+                    (let lp ((previous "") (line (get-first-data-line port)))
                       (cond ((eof-object? line)
                              (error 'get-delimited-base64
                                     "unexpected end of file"))
@@ -279,11 +279,19 @@
                                (error 'get-delimited-base64
                                       "bad end delimiter" type line))
                              (values type (extract)))
+                            ((and (= (string-length line) 5)
+                                  (string-prefix? "=" line))
+                             ;; Skip Radix-64 checksum
+                             (lp previous (get-line-comp string-trim-both port)))
+                            ((not (fxzero? (fxmod (fx+ (string-length previous)
+                                                       (string-length line))
+                                                  4)))
+                             ;; OpenSSH outputs lines with a bad length
+                             (lp (string-append previous line)
+                                 (get-line-comp string-trim-both port)))
                             (else
-                             (unless (and (= (string-length line) 5)
-                                          (string-prefix? "=" line)) ;Skip Radix-64 checksum
-                               (base64-decode line base64-alphabet outp))
-                             (lp (get-line-comp string-trim-both port))))))))
+                             (base64-decode (string-append previous line) base64-alphabet outp)
+                             (lp "" (get-line-comp string-trim-both port))))))))
                (else ;skip garbage (like in openssl x509 -in foo -text output).
                 (get-delimited-base64 port)))))))
 
