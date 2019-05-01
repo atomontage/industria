@@ -1,6 +1,6 @@
 # Industria
 
-[![Build Status](https://travis-ci.org/weinholt/industria.svg?branch=master)](https://travis-ci.org/weinholt/industria)
+[![CircleCI](https://circleci.com/gh/weinholt/industria.svg?style=svg)](https://circleci.com/gh/weinholt/industria)
 
 Industria is a collection of portable R6RS Scheme libraries for
 cryptography. It implements low-level algorithms like AES, RSA, DSA,
