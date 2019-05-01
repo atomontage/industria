@@ -1,7 +1,7 @@
 #!/usr/bin/env scheme-script
 ;; -*- mode: scheme; coding: utf-8 -*- !#
 ;; Example SecSH server
-;; Copyright © 2010, 2011, 2018 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2011, 2018, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -32,10 +32,11 @@
         (industria bytevectors)
         (industria crypto dsa)
         (industria crypto ecdsa)
-        (industria ssh public-keys)
         (industria crypto rsa)
         (industria ssh)
         (industria ssh connection)
+        (industria ssh private-keys)
+        (industria ssh public-keys)
         (industria ssh transport)
         (industria ssh userauth)
         (industria password)
@@ -268,17 +269,7 @@
                   (server (make-ssh-server i o keys)))))))))
 
 (define (get-private-key filename)
-  (call-with-port (open-input-file filename)
-    (lambda (p)
-      (let-values (((type data) (get-delimited-base64 p)))
-        (cond ((string=? type "DSA PRIVATE KEY")
-               (dsa-private-key-from-bytevector data))
-              ((string=? type "RSA PRIVATE KEY")
-               (rsa-private-key-from-bytevector data))
-              ((string=? type "EC PRIVATE KEY")
-               (ecdsa-sha-2-private-key-from-bytevector data))
-              (else
-               (error 'get-private-key "Unsupported key type" type filename)))))))
+  (call-with-port (open-input-file filename) get-ssh-private-key))
 
 (apply
  (case-lambda
@@ -288,7 +279,8 @@
    ((who . _)
     (print "Usage: " who " port hostkey.pem")
     (print "Hint: generate the key with one of these commands:")
-    (print "openssl dsaparam 1024 | openssl gendsa /dev/stdin > demo.pem")
-    (print "certtool --dsa --bits 1024 -p > demo.pem")
+    (print " ssh-keygen -t rsa -f demo.pem -m PEM")
+    (print " openssl dsaparam 1024 | openssl gendsa /dev/stdin > demo.pem")
+    (print " certtool --dsa --bits 1024 -p > demo.pem")
     (exit 1)))
  (command-line))

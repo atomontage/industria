@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2010, 2011, 2012 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2011, 2012, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -181,7 +181,9 @@
      (userauth-request-service msg)
      (userauth-request/public-key-algorithm msg)
      (userauth-request/public-key-key msg)
-     (make-signature (pubkey-blob msg session-id) privkey)))
+     (make-signature (pubkey-blob msg session-id)
+                     (userauth-request/public-key-algorithm msg)
+                     privkey)))
 
   ;; The returned bytevector is what you sign to prove your identity
   ;; to the server. XXX: this must be exported, because otherwise an

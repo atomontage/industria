@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2010, 2012 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2012, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -178,7 +178,8 @@
                          (H (apply hash-kex-data sha-1 sha-1->bytevector
                                    'K_S (ssh-public-key->bytevector hostkey)
                                    'e e 'f f 'K K init-data))
-                         (sig (make-signature H private-key)))
+                         (keyalg (cadr (memq 'host-key-algorithm init-data)))
+                         (sig (make-signature H keyalg private-key)))
                     (send (make-kexdh-reply (ssh-public-key->bytevector hostkey)
                                             f sig)) ; f = g^y mod p
                     (list hostkey (integer->mpint K) H prf-sha-1))))

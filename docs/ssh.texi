@@ -1566,6 +1566,14 @@ Returns the SSH algorithm identifier of @var{key}. For RSA keys this
 is @code{"ssh-rsa"}, for DSA keys it is @code{"ssh-dss"}, and for
 ECDSA keys it is @code{"ecdsa-sha2-[identifier]"} where
 @code{[identifier]} identifies the curve.
+
+This is a legacy procedure.
+@end deffn
+
+@deffn Procedure ssh-public-key-algorithm* key
+Returns a list of valid SSH algorithm identifiers for @var{key}. This
+is the same as @code{ssh-public-key-algorithm}, but more than one
+algorithm can be returned.
 @end deffn
 
 @deffn Procedure ssh-public-key-fingerprint key [algorithm]

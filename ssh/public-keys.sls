@@ -39,7 +39,8 @@
           ssh-public-key->bytevector
           ssh-public-key-fingerprint
           ssh-public-key-random-art
-          ssh-public-key-algorithm)
+          ssh-public-key-algorithm
+          ssh-public-key-algorithm*)
   (import (only (srfi :13 strings) string-pad
                 string-join string-prefix?)
           (except (rnrs) put-string)
@@ -62,7 +63,8 @@
   (define (get-mpint p)
     (let ((bv (get-bytevector-n p (get-unpack p "!L"))))
       (when (mpnegative? bv)
-        (error 'get-ssh-public-key "Refusing to read a negative mpint"))
+        (assertion-violation 'get-ssh-public-key
+                             "Refusing to read a negative mpint"))
       (bytevector->uint bv)))
 
   (define (put-mpint p i)
@@ -114,16 +116,16 @@
             ((string=? type "ssh-ed448")
              (make-ed448-public-key (get-string p)))
             (else
-             (error 'get-ssh-public-key
-                    "Unknown public key algorithm"
-                    type p)))))
+             (assertion-violation 'get-ssh-public-key
+                                  "Unknown public key algorithm"
+                                  type p)))))
 
   (define (id->curve x who)
     (cond ((string=? x "nistp256") nistp256)
           ((string=? x "nistp384") nistp384)
           ((string=? x "nistp521") nistp521)
           (else
-           (error who "Unknown elliptic curve" x))))
+           (assertion-violation who "Unknown elliptic curve" x))))
 
   (define (curve->id x who)
     (cond ((elliptic-curve=? x nistp256) "nistp256")
@@ -131,20 +133,21 @@
           ((elliptic-curve=? x nistp521) "nistp521")
           ;; For every other curve, its ASN.1 OID in ASCII is used
           (else
-           (error who "Unknown elliptic curve" x))))
+           (assertion-violation who "Unknown elliptic curve" x))))
 
   (define (ssh-public-key-algorithm key)
-    (define who 'ssh-public-key-algorithm)
-    (cond ((rsa-public-key? key) "ssh-rsa")
-          ((dsa-public-key? key) "ssh-dss")
+    (car (ssh-public-key-algorithm* key)))
+
+  (define (ssh-public-key-algorithm* key)
+    (define who 'ssh-public-key-algorithm*)
+    (cond ((rsa-public-key? key) '("ssh-rsa" "rsa-sha2-256" "rsa-sha2-512"))
+          ((dsa-public-key? key) '("ssh-dss"))
           ((ecdsa-sha-2-public-key? key)
-           (string-append "ecdsa-sha2-"
-                          (curve->id (ecdsa-public-key-curve key) who)))
-          ((ed25519-public-key? key) "ssh-ed25519")
+           (list (string-append "ecdsa-sha2-"
+                                (curve->id (ecdsa-public-key-curve key) who))))
+          ((ed25519-public-key? key) '("ssh-ed25519"))
           (else
-           (error 'ssh-public-key-algorithm
-                  "Unknown public key algorithm"
-                  key))))
+           (assertion-violation who "Unknown public key algorithm" key))))
 
   (define (ssh-public-key->bytevector key)
     (define who 'ssh-public-key->bytevector)
@@ -175,7 +178,7 @@
                (put-string p (string->utf8 "ssh-ed25519"))
                (put-string p (ed25519-public-key-value key)))
               (else
-               (error who "Unknown public key algorithm" key))))))
+               (assertion-violation who "Unknown public key algorithm" key))))))
 
   (define ssh-public-key-fingerprint
     (case-lambda
@@ -198,7 +201,8 @@
                   (md5->bytevector (md5 (ssh-public-key->bytevector key)))))
             ":" 'infix)))
          (else
-          (error 'ssh-public-key-fingerprint "Invalid algorithm" key algorithm))))))
+          (assertion-violation 'ssh-public-key-fingerprint
+                               "Invalid algorithm" key algorithm))))))
 
   ;; TODO: bubblebabble
 
@@ -229,4 +233,5 @@
                           header
                           "MD5"))
              (else
-              (error 'ssh-public-key-random-art "Invalid algorithm" key algorithm)))))))))
+              (assertion-violation 'ssh-public-key-random-art
+                                   "Invalid algorithm" key algorithm)))))))))

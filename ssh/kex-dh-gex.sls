@@ -318,7 +318,8 @@
                                  'K_S (ssh-public-key->bytevector hostkey)
                                  'p prime 'g generator
                                  'e e 'f f 'K K init-data))
-                       (sig (make-signature H private-key)))
+                       (keyalg (cadr (memq 'host-key-algorithm init-data)))
+                       (sig (make-signature H keyalg private-key)))
                   (send (make-kex-dh-gex-reply (ssh-public-key->bytevector hostkey)
                                                f sig))
                   (unless (< 1 K (- prime 1))

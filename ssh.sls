@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
-;; Copyright © 2010, 2011, 2012, 2018 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2011, 2012, 2018, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -68,7 +68,7 @@
     (rename (debug ssh-debugging))
     ssh-debugging-port)
   (import (rnrs)
-          (only (srfi :1 lists) iota)
+          (only (srfi :1 lists) iota append-map)
           (only (srfi :13 strings) string-every string-join
                 string-trim-right string-prefix?)
           (srfi :14 char-sets)
@@ -428,9 +428,9 @@
           (algorithm-can-verify? algo)
           (and (algorithm-can-sign? algo)
                (member algo
-                       (map ssh-public-key-algorithm
-                            (map private->public
-                                 (ssh-conn-private-keys conn)))))))
+                       (append-map ssh-public-key-algorithm*
+                                   (map private->public
+                                        (ssh-conn-private-keys conn)))))))
     (parameterize ((preferred-server-host-key-algorithms
                     (filter supported?
                             (preferred-server-host-key-algorithms))))
@@ -583,8 +583,8 @@
       (unless client?
         (let ((keyalg (ssh-conn-algorithm conn 'keyalg)))
           (cond ((find (lambda (key)
-                         (string=? keyalg (ssh-public-key-algorithm
-                                           (private->public key))))
+                         (member keyalg (ssh-public-key-algorithm*
+                                         (private->public key))))
                        (ssh-conn-private-keys conn))
                  => (lambda (key) ((ssh-conn-kexer conn) 'private-key key)))
                 (else
