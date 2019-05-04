@@ -131,12 +131,12 @@
     ((int)
      (uint->bytevector int (endianness big)))
     ((int endian)
-     (uint->bytevector int endian
-                       (div (bitwise-and -8 (+ 7 (bitwise-length int))) 8)))
+     (uint->bytevector int endian #f))
     ((int endian len)
-     (if (zero? int)
+     (if (and (zero? int) (zero? len))
          #vu8()
-         (let ((ret (make-bytevector len)))
+         (let* ((len (or len (fxdiv (fxand -8 (fx+ 7 (bitwise-length int))) 8)))
+                (ret (make-bytevector len)))
            (bytevector-uint-set! ret 0 int endian (bytevector-length ret))
            ret)))))
 
@@ -145,12 +145,12 @@
     ((int)
      (sint->bytevector int (endianness big)))
     ((int endian)
-     (sint->bytevector int endian
-                       (div (bitwise-and -8 (+ 8 (bitwise-length int))) 8)))
+     (sint->bytevector int endian #f))
     ((int endian len)
-     (if (zero? int)
+     (if (and (zero? int) (not len))
          #vu8()
-         (let ((ret (make-bytevector len)))
+         (let* ((len (or len (fxdiv (fxand -8 (fx+ 8 (bitwise-length int))) 8)))
+                (ret (make-bytevector len)))
            (bytevector-sint-set! ret 0 int endian (bytevector-length ret))
            ret)))))
 
