@@ -22,6 +22,8 @@
     ed25519-private-key-secret
     ed25519-private->public
 
+    eddsa-private-key-from-bytevector
+
     ed25519-sign
     ed25519-verify
     )
@@ -69,6 +71,26 @@
         (else
          (assertion-violation 'eddsa-public-key-length
                               "Not an EdDSA key" key))))
+
+(define (OneAsymmetricKey)
+  ;; RFC 8410 and RFC 5958. Missing some fields.
+  (define (PrivateKeyAlgorithmIdentifier)
+    `(sequence (algorithm object-identifier)))
+  (define (PrivateKey)
+    'octet-string)
+  `(sequence (version (integer ((v1 . 0) (v2 . 1))))
+             (privateKeyAlgorithm ,(PrivateKeyAlgorithmIdentifier))
+             (privateKey ,(PrivateKey))))
+
+(define (eddsa-private-key-from-bytevector bv)
+  (let-values ([(_ver alg private . _)
+                (apply values (der:translate (der:decode bv) (OneAsymmetricKey)))])
+    (cond ((equal? (car alg) '(1 3 101 112))
+           (let ((secret (der:translate (der:decode private) 'octet-string)))
+             (make-ed25519-private-key secret)))
+          (else
+           (error 'eddsa-private-key-from-bytevector
+                  "Unimplemented private key algorithm" alg)))))
 
 (define-record-type ed-curve
   (fields p                             ;base field ℤₚ

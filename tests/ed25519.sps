@@ -131,4 +131,34 @@
   (test secret public msg sig))
 (test-end)
 
+;; RFC 8410
+(test-begin "ed25519-x509")
+
+(let ((key-bv (base64-decode
+               "MC4CAQAwBQYDK2VwBCIEINTuctv5E1hK1bbY8fdp+K06/nwoy/HU++CXqI9EdVhC")))
+  (test-assert (eddsa-private-key-from-bytevector key-bv)))
+
+(let-values ([(_ key-bv)
+              (get-delimited-base64 (open-string-input-port
+                                     "
+-----BEGIN PRIVATE KEY-----
+MHICAQEwBQYDK2VwBCIEINTuctv5E1hK1bbY8fdp+K06/nwoy/HU++CXqI9EdVhC
+oB8wHQYKKoZIhvcNAQkJFDEPDA1DdXJkbGUgQ2hhaXJzgSEAGb9ECWmEzf6FQbrB
+Z9w7lshQhqowtrbLDFw4rXAxZuE=
+-----END PRIVATE KEY-----
+"))])
+  (test-assert (eddsa-private-key-from-bytevector key-bv)))
+(test-end)
+
+(let* ((key-bv (base64-decode
+                "MC4CAQAwBQYDK2VwBCIEIMXP7muEznG1QOjramAKvMe4noISM/YEXmOrGRcuQEix"))
+       (key (eddsa-private-key-from-bytevector key-bv)))
+  ;; openssl genpkey -algorithm ed25519 -outform PEM -out test25519.pem
+  ;; openssl pkey -inform PEM -in test25519.pem -text -noout
+  (test-assert (ed25519-private-key? key))
+  (test-equal #vu8(#xae #x43 #x02 #x56 #x10 #x04 #x3a #x68 #x24 #xe1 #xce #x20 #x19 #xa6 #x8e
+                   #x75 #x1c #x5f #xde #x75 #x1b #xc3 #xc1 #xd0 #xef #xe9 #xbd #x6d #x37 #xa8
+                   #xa5 #x56)
+              (ed25519-public-key-value (ed25519-private->public key))))
+
 (exit (if (zero? (test-runner-fail-count (test-runner-get))) 0 1))
