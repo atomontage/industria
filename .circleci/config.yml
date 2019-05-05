@@ -24,7 +24,8 @@ workflows:
       - "test-chezscheme"
       - "test-guile"
       - "test-ikarus"
-      - "test-ironscheme"
+      # Disabled for now, lots of weird errors, "Invalid IL code" and so on.
+      # - "test-ironscheme"
       - "test-larceny"
       - "test-racket"
       - "test-sagittarius"
