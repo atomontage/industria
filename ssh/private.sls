@@ -214,12 +214,17 @@
     ;; For kex-dh-gex:
     ;; H = hash(V_C || V_S || I_C || I_S || K_S || min || n ||
     ;;          max || p || g || e || f || K)
+    ;; For kex-ecdh:
+    ;; H = hash(V_C || V_S || I_C || I_S || K_S || Q_C || Q_S || K)
     (->bytevector
      (hash
       (call-with-bytevector-output-port
         (lambda (p)
-          (for-each (lambda (k) (put-bvstring p (cadr (memq k data))))
-                    '(V_C V_S I_C I_S K_S))
+          (for-each (lambda (k)
+                      (cond ((memq k data) =>
+                             (lambda (v)
+                               (put-bvstring p (cadr v))))))
+                    '(V_C V_S I_C I_S K_S Q_C Q_S))
           (for-each (lambda (k)
                       (cond ((memq k data) =>
                              (lambda (v)

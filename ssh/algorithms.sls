@@ -69,6 +69,7 @@
           (industria buffer)
           (industria ssh kexdh)
           (industria ssh kex-dh-gex)
+          (industria ssh kex-ecdh)
           (struct pack))
 
   (define (algfilter valid)
@@ -76,7 +77,9 @@
 
   ;; kex is short for key exchange.
   (define kexes
-    '(;;"ecdh-sha2-nistp256" "ecdh-sha2-nistp384" "ecdh-sha2-nistp521"
+    '("curve25519-sha256"
+      "curve25519-sha256@libssh.org"
+      ;;"ecdh-sha2-nistp256" "ecdh-sha2-nistp384" "ecdh-sha2-nistp521"
       "diffie-hellman-group-exchange-sha256" "diffie-hellman-group-exchange-sha1"
       "diffie-hellman-group14-sha1" "diffie-hellman-group1-sha1"))
 
@@ -318,6 +321,9 @@
           ((or (string=? kex "diffie-hellman-group14-sha1")
                (string=? kex "diffie-hellman-group1-sha1"))
            (make-kex-dh-key-exchanger kex client? send))
+          ((or (string=? kex "curve25519-sha256@libssh.org")
+               (string=? kex "curve25519-sha256"))
+           (make-kex-ecdh-key-exchanger kex client? send))
           (else
            (error 'make-key-exchanger "Unimplemented key exchange algorithm"
                   kex))))
@@ -329,6 +335,9 @@
           ((or (string=? kex "diffie-hellman-group14-sha1")
                (string=? kex "diffie-hellman-group1-sha1"))
            (register-kexdh reg))
+          ((or (string=? kex "curve25519-sha256@libssh.org")
+               (string=? kex "curve25519-sha256"))
+           (register-kex-ecdh reg))
           (else
            (error 'register-key-exchange "Unimplemented key exchange algorithm"
                   kex)))))

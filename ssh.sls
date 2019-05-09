@@ -555,7 +555,7 @@
       (when (and (kexinit-first-kex-packet-follows? peer-kex)
                  (bad-guess? local-kex peer-kex))
         ;; Ignore the next packet, because the peer guessed the wrong
-        ;; kex algorithm. XXX: should be done in the kexer, because it
+        ;; kex algorithm. FIXME: should be done in the kexer, because it
         ;; is the next kex packet that should be ignored
         (trace "Ignoring next packet because of wrong algorithm guess.")
         (get-packet conn))

@@ -1,6 +1,6 @@
 #!/usr/bin/env scheme-script
 ;; -*- mode: scheme; coding: utf-8 -*- !#
-;; Copyright © 2010, 2018 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2010, 2018, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -23,25 +23,32 @@
 
 (import (rnrs)
         (srfi :64 testing)
+        (industria crypto eddsa)
         (industria crypto dsa)
         (industria crypto entropy)
         (industria ssh algorithms)
         (industria ssh kexdh)      ;to recognize kexdh-init
         (industria ssh kex-dh-gex) ;to recognize kex-dh-gex-request
         (industria ssh transport)
+        (industria ssh private-keys)
         (industria base64))
 
 (test-begin "ssh-kex")
 
 (define (print . x) (for-each display x) (newline))
 
-(define (parse-key s)
+(define (parse-dsa-key s)
   (let-values (((type bv) (get-delimited-base64
                            (open-string-input-port s))))
     (dsa-private-key-from-bytevector bv)))
 
+(define (parse-openssh-key s)
+  (let ((privkey* (get-ssh-private-keys
+                   (open-string-input-port s))))
+    (openssh-private-key-private (car privkey*))))
+
 (define server-dsa-key
-  (parse-key
+  (parse-dsa-key
    "-----BEGIN DSA PRIVATE KEY-----
 MIIBugIBAAKBgQCsWqA7PlEkryVmODG5kEUyFQX7NydZZ6+NZu33gnRyMRYiEEvc
 XQHuwpPS89snjwnkkPhv4RFN+4sLiu+5T0MbZ4qZ/fq7Heec2A4/DK9n8qzSdVBg
@@ -54,6 +61,16 @@ J907A8afiPaxVWzwd326Yeit5VdRiEut32PMRILcbqveGTdhvBD8RJSrDuwW+06P
 K2NBpZ7bW3ncxXT0QMNVjvLdHh4+3C4z3PNhOlUIE8fIIBfZxCWv8AIUJlYxaPDf
 WAhaSeMnKo/oDbb2ICI=
 -----END DSA PRIVATE KEY-----"))
+
+(define server-ed25519-key
+  (parse-openssh-key
+   "-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACBlMyd5J2/JAPrA7Mgq3g83ABLSno3C4pZM2em4FEjwQAAAAJjI5ByPyOQc
+jwAAAAtzc2gtZWQyNTUxOQAAACBlMyd5J2/JAPrA7Mgq3g83ABLSno3C4pZM2em4FEjwQA
+AAAEBQEI+BsPGbatSg6ywmqolDIenx/EFad5V+GLLafT9QumUzJ3knb8kA+sDsyCreDzcA
+EtKejcLilkzZ6bgUSPBAAAAAD3dlaW5ob2x0QHRlYXBvdAECAwQFBg==
+-----END OPENSSH PRIVATE KEY-----"))
 
 ;; The kexinit data is just part of the signed data here
 (define (dummy-kexinit client?)
@@ -73,6 +90,8 @@ WAhaSeMnKo/oDbb2ICI=
                               'V_C (string->utf8 "SSH-2.0-Client")
                               'I_C dummy-kexinit-client
                               'I_S dummy-kexinit-server))
+(define dummy-init-data/ed25519
+  `(host-key-algorithm "ssh-ed25519" ,@(cddr dummy-init-data)))
 
 (define (no-attacker)
   (let ((seen-kexdh-init? #f))
@@ -104,10 +123,8 @@ WAhaSeMnKo/oDbb2ICI=
     (error 'text-kex "The key exchange did not run to completion"
            k1 k2))
   (let ((key1 (car k1)) (key2 (car k2)))
-    (and (= (dsa-public-key-p key1) (dsa-public-key-p key2))
-         (= (dsa-public-key-q key1) (dsa-public-key-q key2))
-         (= (dsa-public-key-g key1) (dsa-public-key-g key2))
-         (= (dsa-public-key-y key1) (dsa-public-key-y key2))
+    (and (or (and (dsa-public-key? key1) (dsa-public-key=? key1 key2))
+             (and (ed25519-public-key? key1) (ed25519-public-key=? key1 key2)))
          (equal? (cadr k1) (cadr k2))
          (equal? (caddr k1) (caddr k2)))))
 
@@ -117,14 +134,17 @@ WAhaSeMnKo/oDbb2ICI=
   (let* ((cq (queue 'client attacker))
          (sq (queue 'server attacker))
          (client (make-key-exchanger kexalg #t sq))
-         (server (make-key-exchanger kexalg #f cq)))
+         (server (make-key-exchanger kexalg #f cq))
+         (init-data (if (dsa-private-key? server-key)
+                        dummy-init-data
+                        dummy-init-data/ed25519)))
     ;; Initialize the client
     (client 'start #f)
-    (client 'start #f)                  ;simulate misguessed KEX
-    (client 'init dummy-init-data)
+    ;;(client 'start #f)                  ;simulate misguessed KEX
+    (client 'init init-data)
     ;; Initialize the server
     (server 'start #f)
-    (server 'init dummy-init-data)
+    (server 'init init-data)
     (server 'private-key server-key)
     ;; Run the server and the client against each other
     (let lp ((cstatus 'c-kex-failed) (sstatus 's-kex-failed))
@@ -139,6 +159,9 @@ WAhaSeMnKo/oDbb2ICI=
 
 (test-assert (test-kex "diffie-hellman-group-exchange-sha256" server-dsa-key (no-attacker)))
 (test-assert (test-kex "diffie-hellman-group-exchange-sha1" server-dsa-key (no-attacker)))
+
+(test-assert (test-kex "curve25519-sha256@libssh.org" server-dsa-key (no-attacker)))
+(test-assert (test-kex "curve25519-sha256@libssh.org" server-ed25519-key (no-attacker)))
 
 (test-end)
 
