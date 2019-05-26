@@ -27,8 +27,9 @@
         (industria crypto dsa)
         (industria crypto entropy)
         (industria ssh algorithms)
-        (industria ssh kexdh)      ;to recognize kexdh-init
         (industria ssh kex-dh-gex) ;to recognize kex-dh-gex-request
+        (industria ssh kex-ecdh)   ;to recognize kex-ecdh-init
+        (industria ssh kexdh)      ;to recognize kexdh-init
         (industria ssh transport)
         (industria ssh private-keys)
         (industria base64))
@@ -98,10 +99,11 @@ EtKejcLilkzZ6bgUSPBAAAAAD3dlaW5ob2x0QHRlYXBvdAECAwQFBg==
     (lambda (name x)
       (cond ((and (not seen-kexdh-init?)
                   (or (kexdh-init? x)
-                      (kex-dh-gex-request? x)))
+                      (kex-dh-gex-request? x)
+                      (kex-ecdh-init? x)))
              ;; Filter out the first KEX packet
              ;; (print ";; Server ignores " x)
-             (set! seen-kexdh-init? #t) 
+             (set! seen-kexdh-init? #t)
              #f)
             (else x)))))
 
@@ -140,7 +142,7 @@ EtKejcLilkzZ6bgUSPBAAAAAD3dlaW5ob2x0QHRlYXBvdAECAwQFBg==
                         dummy-init-data/ed25519)))
     ;; Initialize the client
     (client 'start #f)
-    ;;(client 'start #f)                  ;simulate misguessed KEX
+    (client 'start #f)                  ;simulate misguessed KEX
     (client 'init init-data)
     ;; Initialize the server
     (server 'start #f)
@@ -166,4 +168,3 @@ EtKejcLilkzZ6bgUSPBAAAAAD3dlaW5ob2x0QHRlYXBvdAECAwQFBg==
 (test-end)
 
 (exit (if (zero? (test-runner-fail-count (test-runner-get))) 0 1))
-

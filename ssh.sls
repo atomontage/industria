@@ -435,7 +435,7 @@
     (parameterize ((preferred-server-host-key-algorithms
                     (filter supported?
                             (preferred-server-host-key-algorithms))))
-      (unless (list? (preferred-server-host-key-algorithms))
+      (unless (pair? (preferred-server-host-key-algorithms))
         (ssh-error conn 'make-ssh-server
                    "No usable host key algorithms"
                    SSH-DISCONNECT-KEY-EXCHANGE-FAILED))
