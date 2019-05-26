@@ -11,7 +11,7 @@
   (srfi :64 testing))
 
 ;; Tests from RFC 7748
-(test-begin "ecdh-x25515_x448")
+(test-begin "ecdh-x25519_x448")
 
 (test-equal
  (uint->bytevector #xc3da55379de9c6908e94ea4df28d084f32eccf03491c71f754b4075577a28552)
@@ -85,6 +85,11 @@
   (let ((K (ecdh-curve448 (uint->bytevector test-b)
                           (uint->bytevector test-K_A))))
     (test-equal (uint->bytevector test-K) K)))
+
+(let-values ([(a K_A) (make-ecdh-curve25519-secret)]
+             [(b K_B) (make-ecdh-curve25519-secret)])
+  (test-equal (ecdh-curve25519 a K_B)
+              (ecdh-curve25519 b K_A)))
 
 (test-end)
 

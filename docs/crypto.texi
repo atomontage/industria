@@ -31,6 +31,8 @@ or the FDA and quite likely aren't allowed for government work.
 * crypto aes::            Advanced Encryption Standard (AES)
 * crypto arcfour::        ARCFOUR stream cipher
 * crypto blowfish::       The Blowfish cipher
+* crypto ecdh::           Elliptic Curve Diffie-Hellman key exchange
+* crypto eddsa::          Edwards-curve Digital Signature Algorithm (EdDSA)
 * crypto des::            Data Encryption Standard (DES, 3DES)
 * crypto dh::             Diffie-Hellman key exchange
 * crypto dsa::            Digital Signature Algorithm (DSA)
@@ -239,6 +241,115 @@ after processing a block.
 @deffn Procedure blowfish-cbc-decrypt! source source-start target target-start k schedule iv
 The inverse of @code{blowfish-cbc-encrypt!}.
 @end deffn
+
+@c ======================================================================
+@node crypto ecdh
+@subsection Elliptic Curve Diffie-Hellman key exchange
+The @code{(industria crypto ecdh)} library exports procedures for
+Elliptic Curve Diffie-Hellman key exchange. The library is based on
+the X25519 and X448 functions from RFC 7748. ECDH is similar to DH,
+@pxref{crypto dh}, but uses Curve25519 or Curve448. It is used when
+two parties want to generate a key without sending the actual key over
+the network.
+
+The same caveats that apply to regular DH also apply to ECDH.
+@cindex Elliptic Curve Diffie-Hellman
+
+@deffn Procedure make-ecdh-curve25519-secret
+Generates a Curve25519 private key @var{a} and a public key @var{K_A}.
+@end deffn
+
+@deffn Procedure make-ecdh-curve448-secret
+Generates a Curve448 private key @var{a} and a public key @var{K_A}.
+@end deffn
+
+@deffn Procedure ecdh-curve25519 a K_B
+Compute the shared key given Alice's private key @var{a} and Bob's
+public key @var{K_B}.
+
+@example
+(import (industria crypto ecdh))
+
+(let-values ([(a K_A) (make-ecdh-curve25519-secret)]
+             [(b K_B) (make-ecdh-curve25519-secret)])
+  ;; The bytevectors being compared are the shared secret
+  (equal? (ecdh-curve25519 a K_B)
+          (ecdh-curve25519 b K_A)))
+@result{} #t
+@end example
+@end deffn
+
+@deffn Procedure ecdh-curve448 a K_B
+Compute the shared key given Alice's private key @var{a} and Bob's
+public key @var{K_B}.
+@end deffn
+
+@deffn Procedure X25519 k u
+The X25519 function, which is normally not needed, but is exposed for
+those who want to use it. It is a scalar multiplication on the
+Montgomery form of Curve25519.
+@end deffn
+
+@deffn Procedure X448 k u
+Same as @code{X25519}, but with Curve448.
+@end deffn
+
+@c ======================================================================
+@node crypto eddsa
+@subsection Edwards-curve Digital Signature Algorithm (EdDSA)
+EdDSA is a public key signature algorithm based on the edwards25519
+and edwards448 curves. It is used in place for e.g. RSA signatures or
+DSA. Currently only the Ed25519 variant is supported.
+
+@deffn Procedure make-ed25519-public-key bv
+Make an Ed25519 public key using @var{bv}, which is 32 bytes long.
+@end deffn
+
+@deffn Procedure ed25519-public-key? obj
+True if @var{obj} is an Ed25519 public key.
+@end deffn
+
+@deffn Procedure ed25519-public-key=? key1 key2
+True if @var{key1} is the same Ed25519 public key as @var{key2}.
+@end deffn
+
+@deffn Procedure ed25519-public-key-value key
+The public key bytevector for @var{key}.
+@end deffn
+
+@deffn Procedure make-ed25519-private-key bv
+Make an Ed25519 private key using the secret @var{bv}, which is 32
+bytes long.
+@end deffn
+
+@deffn Procedure ed25519-private-key? obj
+True if @var{obj} is an Ed25519 private key.
+@end deffn
+
+@deffn Procedure ed25519-private-key-secret
+The private key bytevector for @var{key}.
+@end deffn
+
+@deffn Procedure ed25519-private->public key
+Returns the public key that corresponds to the Ed25519 private @var{key}.
+@end deffn
+
+@deffn Procedure eddsa-private-key-from-bytevector bv
+Decodes @var{bv} as a private EdDSA key. This is intended to also
+support Ed448 in the future.
+@end deffn
+
+@deffn Procedure ed25519-sign private-key msg
+Generate a SHA-512 based Ed25519 signature of @var{msg} using
+@var{private-key}.
+@end deffn
+
+@deffn Procedure ed25519-verify public-key msg signature
+Verify a SHA-512 based Ed25519 @var{signature} of @var{msg} that was
+purportedly made with @var{public-key}. Returns @code{#t} iff the
+signature is valid.
+@end deffn
+
 
 @c ======================================================================
 @node crypto des

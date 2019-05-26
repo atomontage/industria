@@ -12,7 +12,7 @@
 
 (library (industria crypto eddsa)
   (export
-    make-eddsa-public-key eddsa-public-key?
+    eddsa-public-key?
     eddsa-public-key-length
     ed25519-public-key-value
 

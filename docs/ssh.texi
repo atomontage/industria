@@ -22,6 +22,7 @@ effort to make this library work in an event-driven setting.
 * ssh connection::   Secure Shell Connection Protocol
 * ssh transport::    Secure Shell Transport Layer Protocol
 * ssh userauth::     Secure Shell Authentication Protocol
+* ssh private-keys:: Secure Shell Private Keys
 * ssh public-keys::  Secure Shell Public Keys
 @end menu
 
@@ -74,7 +75,9 @@ This is a list of key exchange algorithm names in the order they are
 preferred.
 
 @emph{Default}:
- ("diffie-hellman-group-exchange-sha256"
+ ("curve25519-sha256"
+  "curve25519-sha256@@libssh.org"
+  "diffie-hellman-group-exchange-sha256"
   "diffie-hellman-group-exchange-sha1"
   "diffie-hellman-group14-sha1"
   "diffie-hellman-group1-sha1")
@@ -86,10 +89,14 @@ preferred. The server may have more than one host key and this is used
 to decide between them.
 
 @emph{Default}:
- ("ecdsa-sha2-nistp256"
+ ("rsa-sha2-512"
+  "rsa-sha2-256"
+  "ssh-rsa"
+  "ecdsa-sha2-nistp256"
   "ecdsa-sha2-nistp384"
   "ecdsa-sha2-nistp521"
-  "ssh-rsa" "ssh-dss")
+  "ssh-ed25519"
+  "ssh-dss")
 @end deffn
 
 @deffn Parameter preferred-encryption-algorithms-client->server
@@ -648,7 +655,7 @@ window size.
 
 
 @deffn Procedure make-channel-data recipient value
-This constructs a request that sends data over a channel. 
+This constructs a request that sends data over a channel.
 @end deffn
 
 @deffn Procedure channel-data? obj
@@ -1532,6 +1539,44 @@ recovered with @code{ssh-conn-session-id}. The @var{private-key} must
 be a private DSA or ECDSA key (support for RSA signing is planned).
 The signed request uses the SSH connection's session ID and can
 therefore not be used with any other connection.
+@end deffn
+
+
+
+@c ======================================================================
+@node ssh private-keys
+@subsection SSH private key format conversion
+The @code{(industria ssh private-keys)} library parses SSH private
+keys. The formats @code{DSA PRIVATE KEY}, @code{RSA PRIVATE KEY},
+@code{EC PRIVATE KEY} and @var{OPENSSH PRIVATE KEY} are supported.
+
+Password-protected keys are not supported.
+
+@deffn Procedure get-ssh-private-keys p
+Read the next list of public keys from the textual input port @var{p}.
+Keys are returned either as their regular private key type (for DSA,
+RSA and EC keys); or as OpenSSH private key objects (see below)
+
+Note that this returns a list. This is done to support the OpenSSH
+private key format, which bundles several keys (including the public
+keys) into a single structure.
+@end deffn
+
+@deffn Procedure openssh-private-key? obj
+True if @var{obj} is an OpenSSH private key.
+@end deffn
+
+@deffn Procedure openssh-private-key-public key
+The public key component of the OpenSSH private @var{key}.
+@end deffn
+
+@deffn Procedure openssh-private-key-private key
+The private key component of the OpenSSH private @var{key}.
+@end deffn
+
+@deffn Procedure openssh-private-key-comment key
+The comment on the OpenSSH private @var{key}. Usually the username and
+hostname where the key was generated.
 @end deffn
 
 
